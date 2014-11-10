@@ -159,6 +159,56 @@ fork(void)
   return pid;
 }
 
+// Create a new thread copying p as the parent.
+// Copies parents stack to *stack and updates new thread to point to it.
+// Caller must set state of returned proc to RUNNABLE.
+int
+clone(void *stack)
+{
+  int i, pid;
+  struct proc *np;
+
+  // Allocate process.
+  if((np = allocproc()) == 0)
+    return -1;
+
+  // Copy process state from p.
+//  if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
+  if((np->pgdir = proc->pgdir) == 0){ //FIXME
+    kfree(np->kstack);
+    np->kstack = 0;
+    np->state = UNUSED;
+    return -1;
+  }
+  np->sz = proc->sz;
+  np->parent = proc->parent; // FIXME Is this correct?
+  *np->tf = *proc->tf;
+  
+  cprintf("proc->sp=%d\n", proc->tf->esp);
+//  Copy over caller thread's stack!
+/*  char t1_addr = &(PGROUNDUP(proc->tf->esp) - 1); //FIXME is the -1 correct
+  char t2_addr = (int) stack + PGSIZE - 1;  //FIXME is the -1 correct
+  cprintf("t1_addr:%x t2_addr:%x proc->sp=%x\n", t1_addr,t2_addr, proc->tf>esp);
+  for (;t1_addr > proc->tf->esp; t1_addr--) {
+    &t2_addr = &t2_addr; // Is this correct?	  
+    t2_addr--;
+  }*/
+//  np->tf->esp = t2_addr;
+  // Clear %eax so that fork returns 0 in the child.
+  np->tf->eax = 0;
+
+  for(i = 0; i < NOFILE; i++)
+    if(proc->ofile[i])
+      np->ofile[i] = filedup(proc->ofile[i]);
+  np->cwd = idup(proc->cwd); // FIXME should this be idup?
+ 
+  pid = np->pid;
+  np->state = RUNNABLE;
+  safestrcpy(np->name, proc->name, sizeof(proc->name));
+  return pid;
+}
+
+
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.

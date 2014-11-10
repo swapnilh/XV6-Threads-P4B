@@ -88,3 +88,26 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+int
+sys_clone(void)
+{ 
+  void * stack;	  
+  if(argptr(0, (void *)&stack, sizeof(void *)) < 0) //Is the size correct?
+    return -1;
+  return clone(stack);
+}
+int
+sys_lock(void)
+{
+  return proc->pid;
+}
+int
+sys_unlock(void)
+{
+  return proc->pid;
+}
+int
+sys_join(void)
+{
+  return proc->pid;
+}
