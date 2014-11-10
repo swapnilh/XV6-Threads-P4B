@@ -6,7 +6,7 @@ int stack[4096] __attribute__ ((aligned (4096)));
 int x = 0;
 
 int main(int argc, char *argv[]) {
-  printf(1, "Stack is at %p\n", stack);
+  printf(1, "Stack is at %p by pid=%d\n", stack, getpid());
   // int tid = fork();
   int tid = clone(stack);
 

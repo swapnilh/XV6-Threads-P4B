@@ -187,15 +187,16 @@ clone(void *stack)
   int stackTop = PGROUNDUP(proc->tf->esp) - 1; //FIXME is the -1 correct
   char *t1_addr = (char *) stackTop;
   char *t2_addr = stack + PGSIZE - 1;  //FIXME is the -1 correct
-  cprintf("t1_addr:%p t2_addr:%p proc->sp=%p\n", t1_addr,t2_addr, proc->tf->esp);
-  for (;t1_addr > (char *)proc->tf->esp; t1_addr--) {
+//  cprintf("t1_addr:%p t2_addr:%p proc->sp=%p\n", t1_addr,t2_addr, proc->tf->esp);
+  for (;t1_addr >= (char *)proc->tf->esp; t1_addr--) {
     *t2_addr = *t1_addr; // Is this correct?	  
 //    cprintf("Copying over addr=%p data=%x to add=%p\n",t1_addr, *t1_addr, t2_addr);
     t2_addr--;
   }
-  np->tf->esp = (int) t2_addr;
-  cprintf("t2_addr=%p proc->sp=%p\n", t2_addr, proc->tf->esp);
-  cprintf("t2_IP=%p t1_ip=%p\n", np->tf->eip, proc->tf->eip);
+//  cprintf("Return address on stack=%d\n",* (int*)proc->tf->esp);
+  np->tf->esp = (int) t2_addr + 1;
+//  cprintf("t2_addr=%p proc->sp=%p\n", t2_addr, proc->tf->esp);
+//  cprintf("t2_IP=%p t1_ip=%p\n", np->tf->eip, proc->tf->eip);
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
@@ -207,7 +208,7 @@ clone(void *stack)
   pid = np->pid;
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
-  procdump();
+ // procdump();
   return pid;
 }
 
