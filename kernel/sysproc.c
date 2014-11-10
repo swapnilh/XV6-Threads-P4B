@@ -92,6 +92,7 @@ int
 sys_clone(void)
 { 
   void * stack;	  
+  cprintf("============= I AM HERE by %d=================\n", proc->pid);
   if(argptr(0, (void *)&stack, sizeof(void *)) < 0) //Is the size correct?
     return -1;
   return clone(stack);
