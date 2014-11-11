@@ -88,14 +88,24 @@ malloc(uint nbytes)
         return 0;
   }
 }
-//thread_create(void (*fn) (void *func), void *args){
 int 
-thread_create(void){
-	int *currentEnd = (int *)malloc(1);
+thread_create(void (*fn) (void *), void *args){
+	char *currentEnd = (char *)malloc(8192);
 	int stackStart = ((int)currentEnd);
 	while(stackStart % 4096 !=0) {
 		stackStart++;
 	}
-	printf(1,"CurrentENd=%p Expected End=%d",currentEnd, stackStart);
-	return 0;
+//	char *waste = (char*)malloc(stackStart-(int)currentEnd);
+//	*waste=0;
+	char *stack = (char*)stackStart;
+	printf(1,"CurrentEnd=%p Expected End=%x Stack=%p \n",currentEnd, stackStart, stack);
+	int tid=clone(stack);
+
+	if (tid < 0) {
+		printf(2, "error!\n");
+	} else if (tid == 0) {
+		(*fn)(args);
+	}
+	free(currentEnd);	
+	exit();
 }
