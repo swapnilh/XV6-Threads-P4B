@@ -117,6 +117,17 @@ growproc(int n)
       return -1;
   }
   proc->sz = sz;
+
+  //Change the sz for all threads/parent-thread of this process
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p=ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+	if(p->pgdir==proc->pgdir)
+		p->sz=proc->sz;
+  }
+  release(&ptable.lock);
+
   switchuvm(proc);
   return 0;
 }
@@ -210,6 +221,46 @@ clone(void *stack)
   safestrcpy(np->name, proc->name, sizeof(proc->name));
  // procdump();
   return pid;
+}
+
+int
+mySleep(struct spinlock*lk)
+{
+
+	acquire(&ptable.lock);
+	release(lk);
+	
+
+	proc->state=SLEEPING;
+    cprintf("child going to sleep\n");
+	sched();
+    cprintf("child just woke up from sleep\n");
+
+	release(&ptable.lock);
+	acquire(lk);
+
+	return 0;
+  
+}
+
+int
+myWakeup(void)
+{
+  acquire(&ptable.lock);
+  struct proc *p;
+  cprintf("Parent starting to look for sleeping child\n");
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if(p->state == SLEEPING && p->pgdir == proc->pgdir)//if sleeping thread is ours
+	{
+      cprintf("Parent found a sleeping child\n");
+      p->state = RUNNABLE;
+	  break;//FIXME wake only one thread?
+	}
+  }
+  release(&ptable.lock);
+  cprintf("Parent done with looking\n");
+  return 0;
 }
 
 

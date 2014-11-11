@@ -111,6 +111,8 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             join(void);
+int             mySleep(struct spinlock*);
+int             myWakeup(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -149,7 +151,7 @@ void            idtinit(void);
 extern uint     ticks;
 void            tvinit(void);
 extern struct spinlock tickslock;
-
+extern struct spinlock guardlock;//used in our lock
 // uart.c
 void            uartinit(void);
 void            uartintr(void);

@@ -99,12 +99,48 @@ sys_clone(void)
 int
 sys_lock(void)
 {
-  return proc->pid;
+  int n;
+  void *argLock;
+  if(argint(0,&n) < 0)
+	return -1;
+  if(argptr(0, (void *)&argLock, sizeof(void *)) < 0) //FIXME should arglock be of type int directly?
+    return -1;
+  int *intLock= (int*)argLock;//FIXME this seems redundant
+
+ 
+  cprintf("Process:%d trying for guard lock\n",proc->pid);
+  acquire(&guardlock);
+  //acuqire the intLock
+  while( xchg((unsigned int*)intLock,1)==1 )
+  { 
+  cprintf("Child Process:%d failed intlock\n",proc->pid);
+   //release(&guardlock);
+   //race condition as this releases guardlock and ... don't think so?
+   mySleep(&guardlock);
+  cprintf("Child Process:%d got woken up\n",proc->pid);
+   //acquire(&guardlock);
+  }
+  cprintf("Process:%d got int lock\n",proc->pid);
+  release(&guardlock);
+  cprintf("Process:%d left guardlock\n",proc->pid);
+  return 0;
 }
 int
 sys_unlock(void)
 {
-  return proc->pid;
+  int n;
+  void *argLock;
+  if(argint(0,&n) < 0)
+	return -1;
+  if(argptr(0, (void *)&argLock, sizeof(void *)) < 0) //FIXME should arglock be of type int directly?
+    return -1;
+  int *intLock= (int*)argLock;//FIXME this seems redundant
+ 
+  acquire(&guardlock);
+  xchg((unsigned int*)intLock,0);//unlock init lock
+  myWakeup();//wake up a sleeping thread
+  release(&guardlock);
+  return 0;
 }
 int
 sys_join(void)
