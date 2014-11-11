@@ -88,3 +88,14 @@ malloc(uint nbytes)
         return 0;
   }
 }
+//thread_create(void (*fn) (void *func), void *args){
+int 
+thread_create(void){
+	int *currentEnd = (int *)malloc(1);
+	int stackStart = ((int)currentEnd);
+	while(stackStart % 4096 !=0) {
+		stackStart++;
+	}
+	printf(1,"CurrentENd=%p Expected End=%d",currentEnd, stackStart);
+	return 0;
+}
