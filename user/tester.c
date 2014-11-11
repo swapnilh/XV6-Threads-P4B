@@ -26,6 +26,5 @@ main(int argc, char *argv[])
   thread_create(func, (void *)arr);
   join();
   printf(1, "** IN THE PARENT x=%d**\n",x);
-// exit();
- return 0;
+  exit();
 }
