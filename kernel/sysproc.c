@@ -109,5 +109,5 @@ sys_unlock(void)
 int
 sys_join(void)
 {
-  return proc->pid;
+  return join();
 }

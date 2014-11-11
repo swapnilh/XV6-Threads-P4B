@@ -100,6 +100,7 @@ cprintf(char *fmt, ...)
 void
 panic(char *s)
 {
+  procdump();	
   int i;
   uint pcs[10];
   

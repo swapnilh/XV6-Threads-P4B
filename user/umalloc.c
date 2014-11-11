@@ -95,8 +95,6 @@ thread_create(void (*fn) (void *), void *args){
 	while(stackStart % 4096 !=0) {
 		stackStart++;
 	}
-//	char *waste = (char*)malloc(stackStart-(int)currentEnd);
-//	*waste=0;
 	char *stack = (char*)stackStart;
 	printf(1,"CurrentEnd=%p Expected End=%x Stack=%p \n",currentEnd, stackStart, stack);
 	int tid=clone(stack);
@@ -105,7 +103,8 @@ thread_create(void (*fn) (void *), void *args){
 		printf(2, "error!\n");
 	} else if (tid == 0) {
 		(*fn)(args);
+		free(currentEnd);	
+		exit();
 	}
-	free(currentEnd);	
-	exit();
+	return 0;
 }

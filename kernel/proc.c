@@ -180,9 +180,9 @@ clone(void *stack)
     return -1;
   }
   np->sz = proc->sz;
-  np->parent = proc->parent; // FIXME Is this correct?
+  np->parent = proc; // FIXME Is this correct?
   *np->tf = *proc->tf;
-  
+  np->cloned = 1;  
 //  Copy over caller thread's stack!
   int stackTop = PGROUNDUP(proc->tf->esp) - 1; //FIXME is the -1 correct
   char *t1_addr = (char *) stackTop;
@@ -226,13 +226,14 @@ exit(void)
     panic("init exiting");
 
   // Close all open files.
-  for(fd = 0; fd < NOFILE; fd++){
-    if(proc->ofile[fd]){
-      fileclose(proc->ofile[fd]);
-      proc->ofile[fd] = 0;
+  if(proc->cloned == 0) {
+    for(fd = 0; fd < NOFILE; fd++){
+      if(proc->ofile[fd]){
+        fileclose(proc->ofile[fd]);
+        proc->ofile[fd] = 0;
+      }
     }
   }
-
   iput(proc->cwd);
   proc->cwd = 0;
 
@@ -277,7 +278,8 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        if(p->cloned == 0)  
+	  freevm(p->pgdir);
         p->state = UNUSED;
         p->pid = 0;
         p->parent = 0;
@@ -298,6 +300,51 @@ wait(void)
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
 }
+
+// Wait for a child thread to exit and return its pid.
+// Return -1 if this process has no children.
+int
+join(void)
+{
+  struct proc *p;
+  int havekids, pid;
+
+  acquire(&ptable.lock);
+  for(;;){
+    // Scan through table looking for zombie children.
+    havekids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->parent != proc)
+        continue;
+      havekids = 1;
+      if(p->state == ZOMBIE){
+        // Found one.
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        if(p->cloned == 0)  
+	  freevm(p->pgdir);
+        p->state = UNUSED;
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || proc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(proc, &ptable.lock);  //DOC: wait-sleep
+  }
+}
+
 
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
