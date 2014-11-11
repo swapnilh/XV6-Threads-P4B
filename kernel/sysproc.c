@@ -38,6 +38,10 @@ sys_kill(void)
 int
 sys_getpid(void)
 {
+  cprintf("In getpid() esp=%x\n",proc->tf->esp);
+  int i=0;
+  for(i=proc->tf->esp; i<proc->tf->esp+20; i++)
+	  cprintf("stack entry=%x\n",*(char*)i);	 
   return proc->pid;
 }
 
@@ -99,7 +103,7 @@ sys_clone(void)
 int
 sys_lock(void)
 {
-  int n;
+/*  int n;
   void *argLock;
   if(argint(0,&n) < 0)
 	return -1;
@@ -124,11 +128,13 @@ sys_lock(void)
   release(&guardlock);
   cprintf("Process:%d left guardlock\n",proc->pid);
   return 0;
+  */
+	return proc->pid;
 }
 int
 sys_unlock(void)
 {
-  int n;
+/*  int n;
   void *argLock;
   if(argint(0,&n) < 0)
 	return -1;
@@ -140,7 +146,8 @@ sys_unlock(void)
   xchg((unsigned int*)intLock,0);//unlock init lock
   myWakeup();//wake up a sleeping thread
   release(&guardlock);
-  return 0;
+  return 0;*/
+	return proc->pid;
 }
 int
 sys_join(void)

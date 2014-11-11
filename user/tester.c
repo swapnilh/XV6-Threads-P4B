@@ -5,19 +5,21 @@
 #include "stat.h"
 #include "user.h"
 int x =0;
-int l =0;
+//int l =0;
 void testprint(void *args){
 //  int *a = (int *)args;
 //  printf(1, "** In the cloned child! a=%d b=%d **\n",a[0],a[1]);
   //printf(1,"Child going for user lock\n");
  
-  printf(1, "%s", "** In the child before lock **\n");
+//  printf(1, "%s", "** In the child before lock **\n");
  //lock(&l);
+ getpid();
   printf(1, "%s", "** In the child **\n");
-  for(;x<3;x++) {
+  for(;x<2;x++) {
       printf(1, "T2 :: x = %d\n", x);
       sleep(100);
    }
+   getpid();
   //unlock(&l);
 }
 int

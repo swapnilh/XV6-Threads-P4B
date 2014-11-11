@@ -103,6 +103,7 @@ thread_create(void (*fn) (void *), void *args){
 		printf(2, "error!\n");
 	} else if (tid == 0) {
 		(*fn)(args);
+		printf(1, "Here!\n");
 		free(currentEnd);	
 		exit();
 	}
