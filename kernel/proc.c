@@ -190,8 +190,8 @@ clone(void *stack)
     return -1;
   }
   np->sz = proc->sz;
-  np->parent = proc; // FIXME Is this correct?
-//  np->parent = proc->parent; // FIXME Is this correct?
+  np->parent = proc->parent; // FIXME Is this correct?
+//  np->parent = proc; // FIXME Is this correct?
   *np->tf = *proc->tf;
   proc->refCount++;
   np->refCount = proc->refCount;  
@@ -229,7 +229,6 @@ clone(void *stack)
   pid = np->pid;
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
- // procdump();
   return pid;
 }
 
@@ -242,7 +241,6 @@ exit(void)
 {
   struct proc *p;
   int fd;
-
   if(proc == initproc)
     panic("init exiting");
 
@@ -316,7 +314,6 @@ wait(void)
       release(&ptable.lock);
       return -1;
     }
-
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
@@ -335,7 +332,7 @@ join(void)
     // Scan through table looking for zombie children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != proc)
+      if(p->parent != proc->parent)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
