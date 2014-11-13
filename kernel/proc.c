@@ -190,8 +190,8 @@ clone(void *stack)
     return -1;
   }
   np->sz = proc->sz;
-  np->parent = proc->parent; // FIXME Is this correct?
-//  np->parent = proc; // FIXME Is this correct?
+//  np->parent = proc->parent; // FIXME Is this correct?
+  np->parent = proc; // FIXME Is this correct?
   *np->tf = *proc->tf;
   proc->refCount++;
   np->refCount = proc->refCount;  
@@ -332,7 +332,7 @@ join(void)
     // Scan through table looking for zombie children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != proc->parent)
+      if(p->parent != proc)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
