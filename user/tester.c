@@ -9,6 +9,8 @@ void testprint(void *args){
 //  int *a = (int *)args;
 //  printf(1, "** In the cloned child! a=%d b=%d **\n",a[0],a[1]);
   printf(1, "%s", "** In the child **\n");
+  printf(1,"Child Addr=%p\n",sbrk(100));
+  printf(1,"Child Addr=%p\n",sbrk(0));
   for(;x<3;x++) {
       printf(1, "T2 :: x = %d\n", x);
       sleep(100);
@@ -23,8 +25,11 @@ main(int argc, char *argv[])
   int *arr=(int *) malloc(2*sizeof(int));
   arr[0] = 123;
   arr[1] = 234;
+  printf(1,"Addr=%p\n",sbrk(0));
   thread_create(func, (void *)arr);
   join();
+  printf(1,"Addr=%p\n",sbrk(100));
+  printf(1,"Addr=%p\n",sbrk(0));
   printf(1, "** IN THE PARENT x=%d**\n",x);
   exit();
 }

@@ -107,7 +107,6 @@ int
 growproc(int n)
 {
   uint sz;
-  
   sz = proc->sz;
   if(n > 0){
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
@@ -117,6 +116,17 @@ growproc(int n)
       return -1;
   }
   proc->sz = sz;
+  
+  //Change the sz for all threads/parent-thread of this process
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p=ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+	if(p->pgdir==proc->pgdir)
+		p->sz=proc->sz;
+  }
+  release(&ptable.lock);
+
   switchuvm(proc);
   return 0;
 }
@@ -181,8 +191,19 @@ clone(void *stack)
   }
   np->sz = proc->sz;
   np->parent = proc; // FIXME Is this correct?
+//  np->parent = proc->parent; // FIXME Is this correct?
   *np->tf = *proc->tf;
-  np->cloned = 1;  
+  proc->refCount++;
+  np->refCount = proc->refCount;  
+  acquire(&ptable.lock);
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if(p->pgdir == proc->pgdir)
+	    p->refCount = proc->refCount;	  
+  }
+  release(&ptable.lock);
+
 //  Copy over caller thread's stack!
   int stackTop = PGROUNDUP(proc->tf->esp) - 1; //FIXME is the -1 correct
   char *t1_addr = (char *) stackTop;
@@ -226,7 +247,7 @@ exit(void)
     panic("init exiting");
 
   // Close all open files.
-  if(proc->cloned == 0) {
+  if(proc->refCount == 0) {
     for(fd = 0; fd < NOFILE; fd++){
       if(proc->ofile[fd]){
         fileclose(proc->ofile[fd]);
@@ -278,7 +299,7 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        if(p->cloned == 0)  
+        if(p->refCount == 0)  
 	  freevm(p->pgdir);
         p->state = UNUSED;
         p->pid = 0;
@@ -322,8 +343,8 @@ join(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        if(p->cloned == 0)  
-	  freevm(p->pgdir);
+//        if(p->refCount == 0)   FIXME
+//	  freevm(p->pgdir);
         p->state = UNUSED;
         p->pid = 0;
         p->parent = 0;
@@ -491,18 +512,28 @@ wakeup(void *chan)
 int
 kill(int pid)
 {
-  struct proc *p;
-
+  struct proc *p, *p_hold;
+  int found = 0;
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
+	found = 1;
+	p_hold = p;
+	break;
+    }
+  }
+  p_hold->refCount--;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pgdir == p_hold->pgdir)
+	    p->refCount = p_hold->refCount;
+  }
+  if (found) {
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
       release(&ptable.lock);
       return 0;
-    }
   }
   release(&ptable.lock);
   return -1;
