@@ -19,7 +19,10 @@ USER_PROGS := \
 	zombie\
 	threads\
 	thread\
-	thread2
+	thread2\
+	size\
+	locks\
+	multi
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))
 
