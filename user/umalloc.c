@@ -96,7 +96,7 @@ thread_create(void (*fn) (void *), void *args){
 		stackStart++;
 	}
 	char *stack = (char*)stackStart;
-	printf(1,"CurrentEnd=%p Expected End=%x Stack=%p \n",currentEnd, stackStart, stack);
+//	printf(1,"CurrentEnd=%p Expected End=%x Stack=%p \n",currentEnd, stackStart, stack);
 	int tid=clone(stack);
 
 	if (tid < 0) {
@@ -106,5 +106,5 @@ thread_create(void (*fn) (void *), void *args){
 		free(currentEnd);	
 		exit();
 	}
-	return 0;
+	return tid;
 }
