@@ -99,11 +99,34 @@ sys_clone(void)
 int
 sys_lock(void)
 {
+
+  void *argLock;
+  if(argptr(0, (void*)&argLock, sizeof(void*)) < 0)
+    return -1;
+  int *intLock=argLock;
+
+  //To spin: comment out guardlocks and sleep
+  acquire(&guardlock);
+  while(xchg((unsigned int*)intLock, 1)==1)
+  {
+	sleep(proc->pgdir,&guardlock);//FIXME sleep on your page directory as the channel? All threads share that
+  }
+  release(&guardlock);
+	
   return proc->pid;
 }
 int
 sys_unlock(void)
 {
+  void *argLock;
+  if(argptr(0, (void*)&argLock, sizeof(void*)) < 0)
+    return -1;
+  int *intLock=argLock;
+
+  xchg((unsigned int*)intLock, 0);
+
+  wakeup(proc->pgdir);//FIXME wakeup all threads sleeping on your page directory. Seems fine
+
   return proc->pid;
 }
 int
